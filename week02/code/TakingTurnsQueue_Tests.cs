@@ -11,7 +11,10 @@ public class TakingTurnsQueueTests
     // Scenario: Create a queue with the following people and turns: Bob (2), Tim (5), Sue (3) and
     // run until the queue is empty
     // Expected Result: Bob, Tim, Sue, Bob, Tim, Sue, Tim, Sue, Tim, Tim
-    // Defect(s) Found: 
+    // Defect(s) Found:  Enqueue inserts new people at the front of the queue using Insert(0), instead of the back, violating FIFO rules
+    // GetNextPerson only requeues people when Turns > 1, but the requirement says a person should be requeued as long as Turns > 0.
+    // People with infinite turns (0 or less) are not recognized as infinite and are not requeued properly.
+
     public void TestTakingTurnsQueue_FiniteRepetition()
     {
         var bob = new Person("Bob", 2);
@@ -43,7 +46,9 @@ public class TakingTurnsQueueTests
     // Scenario: Create a queue with the following people and turns: Bob (2), Tim (5), Sue (3)
     // After running 5 times, add George with 3 turns.  Run until the queue is empty.
     // Expected Result: Bob, Tim, Sue, Bob, Tim, Sue, Tim, George, Sue, Tim, George, Tim, George
-    // Defect(s) Found: 
+    // Defect(s) Found: Same FIFO violation: Enqueue places new people at the front instead of the back.
+    // When George is added midway, he is placed in the wrong position due to incorrect enqueue logic.
+    // Turn decrement logic is still incorrect (people with Turns = 1 or infinite turns are mishandled).
     public void TestTakingTurnsQueue_AddPlayerMidway()
     {
         var bob = new Person("Bob", 2);
@@ -85,7 +90,9 @@ public class TakingTurnsQueueTests
     // Scenario: Create a queue with the following people and turns: Bob (2), Tim (Forever), Sue (3)
     // Run 10 times.
     // Expected Result: Bob, Tim, Sue, Bob, Tim, Sue, Tim, Sue, Tim, Tim
-    // Defect(s) Found: 
+    // Defect(s) Found: A person with Turns = 0 should have infinite turns, but the code treats it as finite.
+    // Infinite-turn players are not requeued because the code only requeues when Turns > 1.
+    // 
     public void TestTakingTurnsQueue_ForeverZero()
     {
         var timTurns = 0;
@@ -116,7 +123,9 @@ public class TakingTurnsQueueTests
     // Scenario: Create a queue with the following people and turns: Tim (Forever), Sue (3)
     // Run 10 times.
     // Expected Result: Tim, Sue, Tim, Sue, Tim, Sue, Tim, Tim, Tim, Tim
-    // Defect(s) Found: 
+    // Defect(s) Found: Negative values for Turns also mean infinite turns, but the code treats them as finite.
+    // Infinite-turn players are never requeued due to Turn > 1 logic.
+    // Their turn count is altered or mishandled, but it should remain unchanged for infinite players.
     public void TestTakingTurnsQueue_ForeverNegative()
     {
         var timTurns = -3;
@@ -143,7 +152,7 @@ public class TakingTurnsQueueTests
     [TestMethod]
     // Scenario: Try to get the next person from an empty queue
     // Expected Result: Exception should be thrown with appropriate error message.
-    // Defect(s) Found: 
+    // Defect(s) Found: No defects found. The correct exception type and message ("No one in the queue.") are thrown.
     public void TestTakingTurnsQueue_Empty()
     {
         var players = new TakingTurnsQueue();
